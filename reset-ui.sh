@@ -1,3 +1,24 @@
+set -euo pipefail
+npm rm tailwindcss @tailwindcss/postcss lightningcss lightningcss-darwin-arm64 || true
+npm i -D tailwindcss@3 postcss autoprefixer
+
+npx tailwindcss init -p
+
+cat > tailwind.config.js <<'JS'
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./src/**/*.{js,ts,jsx,tsx}"],
+  theme: { extend: {} },
+  plugins: [],
+};
+JS
+
+cat > postcss.config.js <<'JS'
+module.exports = { plugins: { tailwindcss: {}, autoprefixer: {} } };
+JS
+
+mkdir -p src/app
+cat > src/app/globals.css <<'CSS'
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,3 +40,7 @@ body { color: hsl(var(--fg)); background: hsl(var(--bg)); }
 .btn-primary:hover { @apply bg-gray-100; }
 .btn-ghost { @apply bg-transparent border-transparent; }
 .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border; }
+CSS
+
+npm pkg set scripts.dev="next dev"
+rm -rf .next
