@@ -16,9 +16,13 @@ export default function ConsentPage() {
           We minimise data by design. By default, media and features are processed locally and never uploaded.
           You may delete everything at any time.
         </p>
-        <div className="mt-6 flex items-center justify-between">
+                <div className="mt-6 flex items-center justify-between">
           <span className="text-sm">Local-only processing (recommended)</span>
-          <Button variant={localOnly ? "default" : "outline"} onClick={() => setLocalOnly(v=>!v)}>
+          <Button 
+            variant={localOnly ? "default" : "outline"} 
+            onClick={() => setLocalOnly(v=>!v)}
+            className={`border ${localOnly ? 'border-white hover:text-black' : 'border-gray-600'}`}
+          >
             {localOnly ? "Enabled" : "Disabled"}
           </Button>
         </div>
