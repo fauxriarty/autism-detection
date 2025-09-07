@@ -36,7 +36,9 @@ export default function QuestionnaireForm({ onReady }: { onReady: (features: Rec
           <Input type="number" min={0} max={1} step={1} {...register(`q${i}` as keyof FormData)} />
         </div>
       ))}
-      <Button type="submit">Save questionnaire</Button>
+      <div className="flex justify-center pt-6 pb-6">
+  <Button type="submit">Save and continue</Button>
+</div>
     </form>
   );
 }

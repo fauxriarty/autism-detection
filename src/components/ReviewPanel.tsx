@@ -7,7 +7,6 @@ export default function ReviewPanel({ onConfirm }: { onConfirm: () => void }) {
       <CardHeader><CardTitle>Review</CardTitle></CardHeader>
       <CardContent>
         <div className="text-sm text-muted-foreground">Review your inputs. You can go back to edit or re-record.</div>
-        <Button className="mt-4" onClick={onConfirm}>Run screening</Button>
       </CardContent>
     </Card>
   );
