@@ -2,7 +2,7 @@
 import { useState } from "react";
 import QuestionnaireForm from "./QuestionnaireForm";
 import AudioRecorder from "./AudioRecorder";
-import VideoRecorder from "./VideoRecorder";
+import ImageCapture from "@/components/ImageCapture";
 import ReviewPanel from "./ReviewPanel";
 import { inferLocal, demoModel, topFactors } from "@/lib/inference";
 import { useRouter } from "next/navigation";
@@ -27,7 +27,7 @@ export default function ScreenWizard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {["Questionnaire","Audio","Video","Review"].map((label, i) => (
+        {["Questionnaire","Audio","Image","Review"].map((label, i) => (
           <span key={label} className={`badge ${step===i+1 ? "bg-muted" : ""}`}>{i+1}. {label}</span>
         ))}
       </div>
@@ -54,9 +54,9 @@ export default function ScreenWizard() {
 
       {step === 3 && (
         <Card>
-          <CardHeader><CardTitle>Video</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Image</CardTitle></CardHeader>
           <CardContent>
-            <VideoRecorder onReady={(f)=> setVFeat(f)} />
+            <ImageCapture onReady={(features, blob) => setVFeat(features)} />
             <div className="mt-4 flex justify-between">
               <Button variant="outline" onClick={()=>setStep(2)}>Back</Button>
               <Button onClick={()=>setStep(4)}>Next</Button>
