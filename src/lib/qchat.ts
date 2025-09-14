@@ -1,7 +1,7 @@
 "use client";
 import * as ort from "onnxruntime-web";
 
-export type Band = "green" | "amber" | "red";
+export type Band = "green" | "red";
 export type Factor = { name: string; dir: "up" | "down" };
 
 let session: ort.InferenceSession | null = null;
@@ -46,7 +46,6 @@ function sexM(s: any) { return String(s ?? "").trim().toUpperCase().startsWith("
 function yn1(s: any)  { const v = String(s ?? "").trim().toUpperCase(); return (v==="Y"||v==="YES"||v==="1") ? 1 : 0; }
 
 function vectorize(cols: string[], f: Record<string, any>): Float32Array {
-  // Lower-case key lookup for robustness
   const ff: Record<string, any> = {};
   for (const [k,v] of Object.entries(f)) ff[k.toLowerCase()] = v;
 
@@ -55,16 +54,13 @@ function vectorize(cols: string[], f: Record<string, any>): Float32Array {
 
   cols.forEach((c, i) => {
     const lc = c.toLowerCase();
-
     if (/^a\d+$/.test(lc)) {
-      // Already encoded by the form as dataset expects (fixed in QuestionnaireForm)
       x[i] = num(ff[lc]);
       if (x[i]) nnz++;
     } else if (lc === "age_mons" || lc === "age") {
       x[i] = num(ff["age_mons"] ?? ff["age"]);
       if (x[i]) nnz++;
     } else if (lc === "sex") {
-      // Colab exported model uses 0/1 here (M=1, F=0)
       x[i] = "sex" in ff ? sexM(ff["sex"]) : num(ff["sex"]);
       if (x[i]) nnz++;
     } else if (lc === "family_mem_with_asd") {
@@ -81,69 +77,88 @@ function vectorize(cols: string[], f: Record<string, any>): Float32Array {
 }
 
 export type QChatResult = {
-  prob: number;                 // P(ASD = YES)
-  band: Band;
-  probsRaw?: number[];          // raw [p(NO), p(YES)] when available
+  prob: number;                 // p(YES); will be 0 or 1 for a pure classifier
+  band: Band;                   // "green" | "red"
+  probsRaw?: number[];          // [p(NO), p(YES)] when the model provides it
+  labelIdx?: number;            // 0|1 when the model provides label
 };
 
 export async function inferQChat(features: Record<string, any>): Promise<QChatResult> {
-  const { session, columns } = await loadQChat();
+  const { session, columns, meta } = await loadQChat();
   const input = vectorize(columns, features);
   const tensor = new ort.Tensor("float32", input, [1, columns.length]);
   const feeds: Record<string, ort.Tensor> = { [session.inputNames[0]]: tensor };
 
   const outs = await session.run(feeds);
 
-  // Prefer output named like "probabilities"
+  // 1) Try to read a 2-probabilities tensor.
   let probs: number[] | null = null;
   for (const [name, t] of Object.entries(outs)) {
     const arr = Array.from((t as ort.Tensor).data as Float32Array | Float64Array);
     if (/prob/i.test(name) && arr.length === 2) { probs = arr; break; }
   }
   if (!probs) {
-    // Fallback: any 2-length output
     for (const t of Object.values(outs)) {
       const arr = Array.from((t as ort.Tensor).data as Float32Array | Float64Array);
       if (arr.length === 2) { probs = arr; break; }
     }
   }
-  if (!probs) {
-    // Final fallback: single-value outputs – treat as p(YES)
+
+  // 2) Otherwise look for a label index (0=NO, 1=YES).
+  let labelIdx: number | undefined = undefined;
+  for (const [name, t] of Object.entries(outs)) {
+    if (/label/i.test(name)) {
+      const arr = Array.from((t as ort.Tensor).data as Float32Array | Float64Array);
+      if (arr.length === 1 && (arr[0] === 0 || arr[0] === 1)) labelIdx = Number(arr[0]);
+    }
+  }
+  if (labelIdx === undefined) {
     for (const t of Object.values(outs)) {
       const arr = Array.from((t as ort.Tensor).data as Float32Array | Float64Array);
-      if (arr.length === 1) { probs = [1-arr[0], arr[0]]; break; }
+      if (arr.length === 1 && (arr[0] === 0 || arr[0] === 1)) { labelIdx = Number(arr[0]); break; }
     }
   }
 
-  const pYES = probs ? probs[1] : 0;
-  const band: Band = pYES < 0.33 ? "green" : pYES < 0.66 ? "amber" : "red";
-  console.log("[QCHAT] probs:", probs ?? "(none)");
-  console.log("[QCHAT] p selected:", pYES, "posIdx:", 1);
+  // 3) Decide p(YES) in a strictly-binary way.
+  let pYES = 0;
+  if (probs) pYES = probs[1];
+  else if (typeof labelIdx === "number") pYES = labelIdx;
+  if (!Number.isFinite(pYES)) pYES = 0;
 
-  return { prob: pYES, band, probsRaw: probs ?? undefined };
+  // Respect class order if present.
+  if (probs && meta?.classes && meta.classes.length === 2) {
+    const yesIdx = meta.classes.findIndex(c => /^yes$/i.test(c));
+    if (yesIdx !== 1 && yesIdx !== -1) {
+      pYES = probs[yesIdx];
+      probs = [probs[1-yesIdx], probs[yesIdx]];
+    }
+  }
+
+  const band: Band = pYES >= 0.5 ? "red" : "green";
+  console.log("[QCHAT] probs:", probs ?? "(none)");
+  if (typeof labelIdx === "number") console.log("[QCHAT] YES index (from label):", labelIdx);
+  console.log("[QCHAT] p selected:", pYES, "band:", band);
+
+  return { prob: pYES, band, probsRaw: probs ?? undefined, labelIdx };
 }
 
-/** Build human-friendly drivers & watch-outs from the answered questionnaire */
+/** Build human-friendly drivers/watch-outs */
 export function buildDrivers(features: Record<string, any>): {
   drivers: Factor[]; watchouts: Factor[]; qchatScore: number;
 } {
   const drivers: Factor[] = [];
   const watchouts: Factor[] = [];
 
-  // Q-CHAT score = sum(A1..A10)
   let score = 0;
   for (let i=1;i<=10;i++){
     const key = `A${i}`;
     const v = Number(features[key] ?? 0);
     score += v;
     if (v === 1) {
-      // For the screener, a 1 is an atypical response (risk ↑)
       drivers.push({ name: `A${i} – ${A_TEXT[key]}`, dir: "up" });
       watchouts.push({ name: `A${i} – ${A_TEXT[key]}`, dir: "up" });
     }
   }
-
-  // Family history can raise risk in the dataset
   if ((features.Family_mem_with_ASD ?? features.Family_ASD ?? 0) === 1) {
     drivers.push({ name: "Family history of ASD", dir: "up" });
   }
