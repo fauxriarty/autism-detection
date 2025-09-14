@@ -1,13 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
 import { Button } from "@/components/ui/button";
 
-export default function ReviewPanel({ onConfirm }: { onConfirm: () => void }) {
+export default function ReviewPanel({
+  onConfirm,
+  onBack,
+}: { onConfirm?: () => void; onBack?: () => void }) {
   return (
-    <Card>
-      <CardHeader><CardTitle>Review</CardTitle></CardHeader>
-      <CardContent>
-        <div className="text-sm text-muted-foreground">Review your inputs. You can go back to edit or re-record.</div>
-      </CardContent>
-    </Card>
+    <div className="card space-y-3">
+      <h3 className="font-semibold">Review</h3>
+      <p className="text-sm text-muted-foreground">When you’re ready, run the screening. Nothing is uploaded by default.</p>
+      <div className="flex gap-3">
+        {onBack && <Button variant="outline" onClick={onBack}>Back</Button>}
+        <Button onClick={onConfirm}>Run screening</Button>
+      </div>
+    </div>
   );
 }
