@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   headers: async () => [
     {
       source: "/:path*",
@@ -9,16 +15,6 @@ const nextConfig = {
       ],
     },
   ],
-
-  //  Ignore ESLint during production build (for deployment)
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
-  //  Ignore TypeScript type errors during build
-  typescript: {
-    ignoreBuildErrors: true,
-  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

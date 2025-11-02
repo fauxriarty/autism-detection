@@ -9,10 +9,14 @@ import { inferVisionFromBlob, type VisionResult } from "@/lib/vision";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import type { Features } from "@/lib/qchat"; // add this import at top
+
 
 export default function ScreenWizard() {
-  const [qFeat, setQFeat] = useState<Record<string, unknown>>({});
-  const [vFeat, setVFeat] = useState<Record<string, unknown>>({});
+  
+const [qFeat, setQFeat] = useState<Features>({});
+const [vFeat, setVFeat] = useState<Features>({});
+
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
 
   const [step, setStep] = useState(1);
