@@ -1,12 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { loadQChat } from "@/lib/qchat";
 
+// ------------------------------------------------------------------
+// Keys and Schema
+// ------------------------------------------------------------------
 const A_KEYS = [
   "A1","A2","A3","A4","A5","A6","A7","A8","A9","A10",
 ] as const;
@@ -36,13 +40,28 @@ const QTXT: Readonly<Record<AKey, string>> = {
   A10:"Does your child stare at nothing with no apparent purpose?",
 };
 
+// ------------------------------------------------------------------
+// Component
+// ------------------------------------------------------------------
 export default function QuestionnaireForm({
   onReady,
 }: {
   onReady: (features: Record<string, number | string>) => void;
 }) {
-  const [preset, setPreset] = useState<"low"|"high"|null>("high");
+  const [preset, setPreset] = useState<"low" | "high" | null>("high");
 
+  // Preload Q-CHAT model once when this component first mounts
+  useEffect(() => {
+    let mounted = true;
+    loadQChat()
+      .then(() => mounted && console.log("[Preload] Q-CHAT model ready"))
+      .catch((e) => console.warn("[Preload] failed:", e));
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Default form values
   const defaults: FormData = {
     Age_Mons: 36,
     A1:"0",A2:"1",A3:"1",A4:"1",A5:"1",A6:"1",A7:"1",A8:"1",A9:"1",A10:"1",
@@ -56,25 +75,27 @@ export default function QuestionnaireForm({
     defaultValues: defaults,
   });
 
-  function applyExample(which: "low"|"high") {
+  // Preset examples
+  function applyExample(which: "low" | "high") {
     if (which === "low") {
       setValue("Age_Mons", 24);
       for (let i = 0; i < 9; i++) setValue(A_KEYS[i], "0");
-      setValue("A10","0");
-      setValue("Sex","F");
-      setValue("Family_mem_with_ASD","0");
+      setValue("A10", "0");
+      setValue("Sex", "F");
+      setValue("Family_mem_with_ASD", "0");
       setPreset("low");
       return;
     }
     // high-risk
     setValue("Age_Mons", 36);
     for (let i = 0; i < 9; i++) setValue(A_KEYS[i], "1");
-    setValue("A10","1");
-    setValue("Sex","M");
-    setValue("Family_mem_with_ASD","1");
+    setValue("A10", "1");
+    setValue("Sex", "M");
+    setValue("Family_mem_with_ASD", "1");
     setPreset("high");
   }
 
+  // Submit handler
   function onSubmit(data: FormData) {
     const feat: Record<string, number | string> = {
       Age_Mons: data.Age_Mons,
@@ -85,11 +106,17 @@ export default function QuestionnaireForm({
     onReady(feat);
   }
 
+  // ------------------------------------------------------------------
+  // Render
+  // ------------------------------------------------------------------
   return (
     <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+      {/* Age and presets */}
       <div className="rounded-xl border p-4">
         <div className="mb-4">
-          <Label htmlFor="age" className="block mb-1">Age (months)</Label>
+          <Label htmlFor="age" className="block mb-1">
+            Age (months)
+          </Label>
           <Input
             id="age"
             type="number"
@@ -99,11 +126,12 @@ export default function QuestionnaireForm({
             {...register("Age_Mons", { valueAsNumber: true })}
           />
         </div>
+
         <div className="flex flex-wrap gap-2 mt-3">
           <Button
             type="button"
-            aria-pressed={preset==="low"}
-            variant={preset==="low" ? "default" : "outline"}
+            aria-pressed={preset === "low"}
+            variant={preset === "low" ? "default" : "outline"}
             onClick={() => applyExample("low")}
             size="sm"
           >
@@ -111,8 +139,8 @@ export default function QuestionnaireForm({
           </Button>
           <Button
             type="button"
-            aria-pressed={preset==="high"}
-            variant={preset==="high" ? "default" : "outline"}
+            aria-pressed={preset === "high"}
+            variant={preset === "high" ? "default" : "outline"}
             onClick={() => applyExample("high")}
             size="sm"
           >
@@ -121,6 +149,7 @@ export default function QuestionnaireForm({
         </div>
       </div>
 
+      {/* Sex + Family */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="rounded-xl border p-4">
           <div className="mb-2 font-medium">Sex</div>
@@ -150,14 +179,17 @@ export default function QuestionnaireForm({
         </div>
       </div>
 
+      {/* Questions A1–A10 */}
       <div className="space-y-4">
         {A_KEYS.map((key, idx) => {
           const yesIsOne = key === "A10";
           const yesVal = yesIsOne ? "1" : "0";
-          const noVal  = yesIsOne ? "0" : "1";
+          const noVal = yesIsOne ? "0" : "1";
           return (
             <div key={key} className="rounded-xl border p-4">
-              <div className="mb-2 font-medium">Q{idx + 1}. {QTXT[key]}</div>
+              <div className="mb-2 font-medium">
+                Q{idx + 1}. {QTXT[key]}
+              </div>
               <div className="flex gap-6">
                 <label className="inline-flex items-center gap-2">
                   <input type="radio" className="form-radio" value={yesVal} {...register(key)} />

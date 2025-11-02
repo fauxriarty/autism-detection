@@ -76,18 +76,34 @@ const [vFeat, setVFeat] = useState<Features>({});
   return (
     <div className="space-y-6 relative">
             {busy && (
-        <div className="absolute inset-0 z-10 bg-black/80 backdrop-blur-md flex items-center justify-center">
-          <div className="rounded-xl border border-white/10 px-8 py-6 bg-background shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="text-lg font-medium">Processing</span>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Running behavioral and visual analysis...
-            </div>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl">
+    <div className="relative flex flex-col items-center text-center">
+      {/* Glowing pulsing background circle */}
+      <div className="absolute -inset-16 bg-gradient-to-r from-purple-500/20 via-blue-400/20 to-cyan-400/20 blur-3xl animate-pulse rounded-full" />
+      
+      <Loader2 className="h-12 w-12 text-white animate-spin mb-4 relative z-10" />
+      <h2 className="text-2xl font-semibold text-white relative z-10">
+        Processing your screening...
+      </h2>
+      <p className="text-sm text-gray-400 mt-2 relative z-10">
+        Running behavioral and visual analysis
+      </p>
+
+      {/* Animated progress shimmer bar */}
+      <div className="w-64 h-1.5 mt-6 bg-neutral-800 overflow-hidden rounded-full relative z-10">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 animate-[progress_1.5s_linear_infinite]" />
+      </div>
+    </div>
+
+    <style jsx>{`
+      @keyframes progress {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+    `}</style>
+  </div>
+)}
+
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         {["Questionnaire","Image","Review"].map((label, i) => (
