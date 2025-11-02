@@ -7,13 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-// --- Typed keys --------------------------------------------------------------
 const A_KEYS = [
   "A1","A2","A3","A4","A5","A6","A7","A8","A9","A10",
 ] as const;
 type AKey = (typeof A_KEYS)[number];
 
-// --- Schema ------------------------------------------------------------------
 const Schema = z.object({
   Age_Mons: z.number().int().min(0).max(120),
   A1: z.enum(["0","1"]), A2: z.enum(["0","1"]), A3: z.enum(["0","1"]),
@@ -25,7 +23,6 @@ const Schema = z.object({
 });
 type FormData = z.infer<typeof Schema>;
 
-// --- Question text (Q2 is yes/no phrasing) ----------------------------------
 const QTXT: Readonly<Record<AKey, string>> = {
   A1:"Does your child look at you when you call their name?",
   A2:"Does your child make eye contact easily?",
@@ -37,19 +34,17 @@ const QTXT: Readonly<Record<AKey, string>> = {
   A8:"Would you describe your child’s first words as typical?",
   A9:"Does your child use simple gestures (e.g., wave goodbye)?",
   A10:"Does your child stare at nothing with no apparent purpose?",
-} as const;
+};
 
 export default function QuestionnaireForm({
   onReady,
 }: {
   onReady: (features: Record<string, number | string>) => void;
 }) {
-  // which preset button is “active” for styling
-  const [preset, setPreset] = useState<"low"|"mid"|"high"|null>("high");
+  const [preset, setPreset] = useState<"low"|"high"|null>("high");
 
   const defaults: FormData = {
     Age_Mons: 36,
-    // demo “higher-risk” defaults so users don’t always see 0%
     A1:"0",A2:"1",A3:"1",A4:"1",A5:"1",A6:"1",A7:"1",A8:"1",A9:"1",A10:"1",
     Sex:"M",
     Family_mem_with_ASD:"1",
@@ -61,39 +56,17 @@ export default function QuestionnaireForm({
     defaultValues: defaults,
   });
 
-  function applyExample(which: "low"|"mid"|"high") {
+  function applyExample(which: "low"|"high") {
     if (which === "low") {
-      // largely typical answers
       setValue("Age_Mons", 24);
-      for (let i = 0; i < 9; i++) setValue(A_KEYS[i], "0"); // A1..A9 typical (Yes→0)
-      setValue("A10","0"); // A10 typical (No→0)
+      for (let i = 0; i < 9; i++) setValue(A_KEYS[i], "0");
+      setValue("A10","0");
       setValue("Sex","F");
       setValue("Family_mem_with_ASD","0");
       setPreset("low");
       return;
     }
-
-    if (which === "mid") {
-      // borderline: 4 atypical points (common Q-CHAT threshold >3)
-      // A1..A9: atypical = "1" (choose a few "No"); A10 atypical = "1" (Yes)
-      setValue("Age_Mons", 30);
-      setValue("Sex","M");
-      setValue("Family_mem_with_ASD","0");
-
-      // Start all typical
-      for (let i = 0; i < 9; i++) setValue(A_KEYS[i], "0");
-      setValue("A10","0");
-
-      // Flip a few to atypical to total ~4 points
-      setValue("A2","1");  // eye contact not easy
-      setValue("A4","1");  // not pointing to share
-      setValue("A6","1");  // not following gaze
-      setValue("A10","1"); // stares at nothing (A10 atypical)
-      setPreset("mid");
-      return;
-    }
-
-    // "high"
+    // high-risk
     setValue("Age_Mons", 36);
     for (let i = 0; i < 9; i++) setValue(A_KEYS[i], "1");
     setValue("A10","1");
@@ -114,7 +87,6 @@ export default function QuestionnaireForm({
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-      {/* Age input with example buttons below it */}
       <div className="rounded-xl border p-4">
         <div className="mb-4">
           <Label htmlFor="age" className="block mb-1">Age (months)</Label>
@@ -126,9 +98,7 @@ export default function QuestionnaireForm({
             className="max-w-[220px]"
             {...register("Age_Mons", { valueAsNumber: true })}
           />
-          <p className="mt-1 text-xs text-muted-foreground">Q-CHAT uses months (e.g., 24, 36).</p>
         </div>
-
         <div className="flex flex-wrap gap-2 mt-3">
           <Button
             type="button"
@@ -138,15 +108,6 @@ export default function QuestionnaireForm({
             size="sm"
           >
             Example: low-risk
-          </Button>
-          <Button
-            type="button"
-            aria-pressed={preset==="mid"}
-            variant={preset==="mid" ? "default" : "outline"}
-            onClick={() => applyExample("mid")}
-            size="sm"
-          >
-            Example: medium-risk
           </Button>
           <Button
             type="button"
@@ -160,7 +121,6 @@ export default function QuestionnaireForm({
         </div>
       </div>
 
-      {/* Sex + Family history */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="rounded-xl border p-4">
           <div className="mb-2 font-medium">Sex</div>
@@ -190,10 +150,9 @@ export default function QuestionnaireForm({
         </div>
       </div>
 
-      {/* A1..A10 */}
       <div className="space-y-4">
         {A_KEYS.map((key, idx) => {
-          const yesIsOne = key === "A10"; // only A10: Yes=1, No=0
+          const yesIsOne = key === "A10";
           const yesVal = yesIsOne ? "1" : "0";
           const noVal  = yesIsOne ? "0" : "1";
           return (

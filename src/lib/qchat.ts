@@ -142,7 +142,7 @@ export async function inferQChat(features: Record<string, any>): Promise<QChatRe
   return { prob: pYES, band, probsRaw: probs ?? undefined, labelIdx };
 }
 
-/** Build human-friendly drivers/watch-outs */
+
 export function buildDrivers(features: Record<string, any>): {
   drivers: Factor[]; watchouts: Factor[]; qchatScore: number;
 } {
