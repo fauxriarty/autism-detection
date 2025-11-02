@@ -7,7 +7,7 @@ const TIMEOUT_MS = Number(process.env.VISION_API_TIMEOUT_MS || 12000);
 function withTimeout<T>(p: Promise<T>, ms: number, controller?: AbortController) {
   const c = controller ?? new AbortController();
   const t = setTimeout(() => c.abort("timeout"), ms);
-  return { signal: c.signal, done: p.finally(() => clearTimeout(t)) };
+  return { done: p.finally(() => clearTimeout(t)) };  // Removed unused 'signal'
 }
 
 // POST /api/vision  → forwards image to {BASE}/predict
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     fwd.append("file", file, file.name || "image.jpg");
 
     const controller = new AbortController();
-    const { signal, done } = withTimeout(
+    const { done } = withTimeout(
       fetch(`${BASE}/predict`, {
         method: "POST",
         body: fwd,
@@ -42,9 +42,9 @@ export async function POST(req: NextRequest) {
     }
     const data = await res.json();
     return NextResponse.json(data);
-  } catch (e: any) {
-    const status = e?.name === "AbortError" ? 504 : 500;
-    return NextResponse.json({ error: e?.message || "proxy error" }, { status });
+  } catch (e: unknown) {  // Changed from FormData to unknown
+    const status = (e as Error)?.name === "AbortError" ? 504 : 500;
+    return NextResponse.json({ error: (e as Error)?.message || "proxy error" }, { status });
   }
 }
 

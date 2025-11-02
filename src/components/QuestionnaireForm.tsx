@@ -50,8 +50,8 @@ export default function QuestionnaireForm({
     Family_mem_with_ASD:"1",
   };
 
-  const resolver = zodResolver(Schema) as unknown as Resolver<FormData, any, FormData>;
-  const { register, handleSubmit, setValue } = useForm<FormData, any, FormData>({
+  const resolver = zodResolver(Schema) as Resolver<FormData>;
+  const { register, handleSubmit, setValue } = useForm<FormData>({
     resolver,
     defaultValues: defaults,
   });

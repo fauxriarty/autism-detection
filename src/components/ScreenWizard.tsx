@@ -10,21 +10,16 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-type Band = "green" | "red";
-
 export default function ScreenWizard() {
-  const [qFeat, setQFeat] = useState<Record<string, any>>({});
-  const [vFeat, setVFeat] = useState<Record<string, any>>({});
+  const [qFeat, setQFeat] = useState<Record<string, unknown>>({});
+  const [vFeat, setVFeat] = useState<Record<string, unknown>>({});
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
 
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
 
-  function aggregate(qBand: QBand, v?: VisionResult): Band {
-    if (v && v.label === "YES") return "red";
-    return qBand === "red" ? "red" : "green";
-  }
+
 
   async function handleRun() {
     try {
@@ -34,6 +29,8 @@ export default function ScreenWizard() {
 
       // 1️⃣ Q-CHAT (local)
       const qres = await inferQChat(all);
+      console.log("[Q-CHAT] response:", qres);
+      
       const { drivers, watchouts, qchatScore } = buildDrivers(all);
 
       // threshold logic (≥3 = red)
@@ -59,7 +56,7 @@ export default function ScreenWizard() {
           vision: vres ?? null,
           drivers,
           watchouts,
-        })
+           })
       );
 
       console.log("[RESULT STORED]", JSON.parse(sessionStorage.getItem("result") || "{}"));

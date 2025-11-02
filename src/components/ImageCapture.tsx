@@ -47,13 +47,17 @@ export default function ImageCapture({ onReady }: Props) {
         await videoRef.current.play().catch(() => {});
       }
       setStatus("live");
-    } catch (e: any) {
+    } catch (e) {
       setStatus("error");
-      setError(e?.message || "Camera access failed.");
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("Camera access failed.");
+      }
     }
   }
 
-  // Capture current frame
+  // Capture current frame  
   function capture() {
     if (!videoRef.current || !canvasRef.current) return;
     const vw = videoRef.current.videoWidth;
