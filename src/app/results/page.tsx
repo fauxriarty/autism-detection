@@ -36,9 +36,9 @@ export default function ResultsPage() {
 
   if (!data) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6">
         <Card>
-          <CardContent className="p-6 space-y-3">
+          <CardContent className="p-6 space-y-3 text-center">
             <p>No results yet.</p>
             <Button onClick={() => location.assign("/screen")}>Start screening</Button>
           </CardContent>
@@ -59,16 +59,21 @@ export default function ResultsPage() {
   const likelihoodPercent = Math.round(combined * 100);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* Model Suggestion Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Model suggestion</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <CardTitle className="text-base sm:text-lg md:text-xl">Model suggestion</CardTitle>
             <Pill color={band}>{band.toUpperCase()}</Pill>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="text-3xl font-semibold">{likelihoodPercent}% likelihood</div>
+        <CardContent className="space-y-4">
+          <div className="text-2xl sm:text-3xl font-semibold text-center sm:text-left">
+            {likelihoodPercent}% likelihood
+          </div>
+
+          {/* Visual likelihood bar */}
           <div className="relative h-3 w-full bg-neutral-800 rounded-full overflow-hidden">
             <div
               className={`absolute left-0 top-0 h-full transition-all duration-700 rounded-full ${
@@ -79,19 +84,28 @@ export default function ResultsPage() {
               style={{ width: `${likelihoodPercent}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
+
+          <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             Combines questionnaire and image model predictions with equal weight.  
             This is a screening indicator, not a diagnosis.
           </p>
         </CardContent>
       </Card>
 
+      {/* Drivers */}
       {data.drivers?.length > 0 && (
         <Card>
-          <CardHeader><CardTitle>Inputs that most increased the suggestion</CardTitle></CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
+          <CardHeader>
+            <CardTitle className="text-base sm:text-lg">
+              Inputs that most increased the suggestion
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap justify-center sm:justify-start gap-2">
             {data.drivers.slice(0, 8).map((f, i) => (
-              <span key={`${f.name}-${i}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-red-900/30 text-red-300 border border-red-800/50">
+              <span
+                key={`${f.name}-${i}`}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs sm:text-sm bg-red-900/30 text-red-300 border border-red-800/50"
+              >
                 ↑ {f.name}
               </span>
             ))}
@@ -99,13 +113,14 @@ export default function ResultsPage() {
         </Card>
       )}
 
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Per-model breakdown */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle>Questionnaire</CardTitle>
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className="text-base sm:text-lg">Questionnaire</CardTitle>
             <Pill color={data.qchat.band}>{data.qchat.band.toUpperCase()}</Pill>
           </CardHeader>
-          <CardContent className="text-sm">
+          <CardContent className="text-sm sm:text-base text-center sm:text-left">
             Q-CHAT score: {data.qchat.score} / 10  
             <br />
             Probability: {(data.qchat.prob * 100).toFixed(1)} %
@@ -113,8 +128,8 @@ export default function ResultsPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle>Image model</CardTitle>
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className="text-base sm:text-lg">Image model</CardTitle>
             <Pill
               color={
                 !data.vision
@@ -127,7 +142,7 @@ export default function ResultsPage() {
               {!data.vision ? "N/A" : data.vision.label}
             </Pill>
           </CardHeader>
-          <CardContent className="text-sm">
+          <CardContent className="text-sm sm:text-base text-center sm:text-left">
             {!data.vision
               ? "No image provided."
               : `Confidence: ${(data.vision.confidence * 100).toFixed(1)} %`}
@@ -135,23 +150,29 @@ export default function ResultsPage() {
         </Card>
       </div>
 
+      {/* Interpretation */}
       <Card>
-        <CardHeader><CardTitle>What this means</CardTitle></CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardHeader>
+          <CardTitle className="text-base sm:text-lg">What this means</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm sm:text-base">
           {band === "green" ? (
-            <p>
-              Based on your responses (and image, if provided), fewer indicators associated with autism traits were found.  
+            <p className="text-center sm:text-left">
+              Based on your responses (and image, if provided), fewer indicators associated
+              with autism traits were found.  
               A Q-CHAT score below 3 typically suggests a low likelihood of ASD.
             </p>
           ) : (
-            <p>
+            <p className="text-center sm:text-left">
               Your responses (and/or image) indicate patterns associated with autism traits.  
-              A Q-CHAT score of 3 or higher often warrants further discussion with a qualified clinician.
+              A Q-CHAT score of 3 or higher often warrants further discussion with a clinician.
             </p>
           )}
-          <div className="pt-1">
-            <Button onClick={() => location.assign("/explain")}>Learn more</Button>
-            <Button variant="outline" className="ml-2" disabled>
+          <div className="pt-1 flex flex-col sm:flex-row justify-center sm:justify-start gap-3">
+            <Button onClick={() => location.assign("/explain")} className="w-full sm:w-auto">
+              Learn more
+            </Button>
+            <Button variant="outline" className="w-full sm:w-auto" disabled>
               Download PDF (coming soon)
             </Button>
           </div>
