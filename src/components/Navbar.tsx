@@ -157,7 +157,7 @@ export default function Navbar() {
 						<CardContent className="space-y-3 sm:space-y-4 text-xs sm:text-sm md:text-base pt-4 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto flex-1 px-4 sm:px-6">
 							<div className="bg-amber-100/50 dark:bg-amber-900/20 p-3 sm:p-4 rounded-lg border border-amber-300/50">
 								<p className="text-amber-900/95 dark:text-amber-100/90 font-semibold leading-snug">
-									⚠️ This tool is designed for early detection screening in children only.
+									⚠️ This tool is designed for early detection screening in children only. 
 									It is not a medical diagnosis and should not be used as a substitute for professional medical evaluation.
 								</p>
 							</div>
@@ -166,8 +166,8 @@ export default function Navbar() {
 								<div>
 									<p className="font-semibold text-amber-900 dark:text-amber-100 mb-1 sm:mb-2">What to provide:</p>
 									<ul className="list-disc pl-5 sm:pl-6 space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
-										<li><span className="font-semibold">Questionnaire:</span> Must be completed by the child's parent or guardian from their perspective</li>
-										<li><span className="font-semibold">Photo:</span> A clear photo of the child's face is required for visual analysis</li>
+										<li><span className="font-semibold">Questionnaire:</span> Must be completed by the child&apos;s parent or guardian from their perspective</li>
+										<li><span className="font-semibold">Photo:</span> A clear photo of the child&apos;s face is required for visual analysis</li>
 									</ul>
 								</div>
 

@@ -51,8 +51,8 @@ export default function HomePage() {
             <div>
               <p className="font-semibold text-amber-900 dark:text-amber-100 mb-1 sm:mb-2">What to provide:</p>
               <ul className="list-disc pl-5 sm:pl-6 space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
-                <li><span className="font-semibold">Questionnaire:</span> Must be completed by the child's parent or guardian from their perspective</li>
-                <li><span className="font-semibold">Photo:</span> A clear photo of the child's face is required for visual analysis</li>
+                <li><span className="font-semibold">Questionnaire:</span> Must be completed by the child&apos;s parent or guardian from their perspective</li>
+                <li><span className="font-semibold">Photo:</span> A clear photo of the child&apos;s face is required for visual analysis</li>
               </ul>
             </div>
 
@@ -143,7 +143,7 @@ export default function HomePage() {
               <h3 className="font-medium">Methodology</h3>
               <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                 <li><span className="font-semibold">Q-CHAT-10 Behavioral Assessment:</span> Parent/guardian questionnaire assessing developmental milestones and behavioral patterns</li>
-                <li><span className="font-semibold">Visual Analysis:</span> AI-based analysis of facial and behavioral visual cues (model trained on children's images)</li>
+                <li><span className="font-semibold">Visual Analysis:</span> AI-based analysis of facial and behavioral visual cues (model trained on children&apos;s images)</li>
                 <li><span className="font-semibold">Aggregate Scoring:</span> Combined assessment (0–100 scale) indicating risk level</li>
               </ul>
             </div>
