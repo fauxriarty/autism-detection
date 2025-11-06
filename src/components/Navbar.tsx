@@ -193,7 +193,7 @@ export default function Navbar() {
 
 							<div className="bg-amber-100/50 dark:bg-amber-900/20 p-3 sm:p-4 rounded-lg border border-amber-300/50">
 								<p className="text-xs sm:text-sm text-amber-900/90 dark:text-amber-100/85 leading-snug">
-									If you have concerns about a child's development, please consult with a healthcare professional or developmental specialist for proper evaluation.
+									If you have concerns about a child&apos;s development, please consult with a healthcare professional or developmental specialist for proper evaluation.
 								</p>
 							</div>
 						</CardContent>
