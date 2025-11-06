@@ -1,61 +1,182 @@
 "use client";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AlertCircle, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 
 export default function HomePage() {
-  return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Main Card */}
-      <Card className="text-center sm:text-left">
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl md:text-2xl">
-            Autism Spectrum Disorder Screening
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Complete our research-based screening that combines behavioral and visual analysis
-            to provide insights about potential ASD traits. Results include an aggregate score
-            and detailed breakdown of contributing factors.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
-            <Button onClick={() => location.assign("/screen")}>Start screening</Button>
-            <Button variant="outline" onClick={() => location.assign("/consent")}>
-              Privacy &amp; consent
-            </Button>
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const router = useRouter();
+
+  const handleStartScreening = () => {
+    setShowDisclaimer(true);
+  };
+
+  const handleAcceptDisclaimer = () => {
+    router.push("/screen");
+  };
+
+  const disclaimerContent = (
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <Card className="w-full sm:max-w-2xl border-amber-500/70 bg-amber-50/95 dark:bg-amber-950/30 max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col rounded-b-none sm:rounded-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between bg-amber-50/95 dark:bg-amber-950/30 border-b border-amber-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-10">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <AlertCircle className="h-5 w-6 sm:h-6 sm:w-6 text-amber-600 flex-shrink-0" />
+            <CardTitle className="text-base sm:text-lg md:text-xl text-amber-600 truncate">
+              Important Disclaimer
+            </CardTitle>
+          </div>
+          <button
+            onClick={() => setShowDisclaimer(false)}
+            className="text-amber-600 hover:text-amber-700 transition-colors ml-2 flex-shrink-0"
+            aria-label="Close disclaimer"
+          >
+            <X className="h-5 w-5 sm:h-6 sm:w-6" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <CardContent className="space-y-3 sm:space-y-4 text-xs sm:text-sm md:text-base pt-4 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto flex-1 px-4 sm:px-6">
+          <div className="bg-amber-100/50 dark:bg-amber-900/20 p-3 sm:p-4 rounded-lg border border-amber-300/50">
+            <p className="text-amber-900/95 dark:text-amber-100/90 font-semibold leading-snug">
+              ⚠️ This tool is designed for early detection screening in children only. 
+              It is not a medical diagnosis and should not be used as a substitute for professional medical evaluation.
+            </p>
+          </div>
+
+          <div className="space-y-2 sm:space-y-3 text-amber-900/90 dark:text-amber-100/80">
+            <div>
+              <p className="font-semibold text-amber-900 dark:text-amber-100 mb-1 sm:mb-2">What to provide:</p>
+              <ul className="list-disc pl-5 sm:pl-6 space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
+                <li><span className="font-semibold">Questionnaire:</span> Must be completed by the child's parent or guardian from their perspective</li>
+                <li><span className="font-semibold">Photo:</span> A clear photo of the child's face is required for visual analysis</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-semibold text-amber-900 dark:text-amber-100 mb-1 sm:mb-2">Model training:</p>
+              <ul className="list-disc pl-5 sm:pl-6 space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
+                <li>Our visual analysis model has been trained on images of <span className="font-semibold">children</span></li>
+                <li>The behavioral assessment is based on developmental patterns in <span className="font-semibold">children</span></li>
+                <li>This tool may not be accurate for adults or individuals outside the intended age range</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-semibold text-amber-900 dark:text-amber-100 mb-1 sm:mb-2">Important limitations:</p>
+              <ul className="list-disc pl-5 sm:pl-6 space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
+                <li>Not suitable for adults or individuals outside the child age range</li>
+                <li>Requires accurate parental reporting for behavioral assessment</li>
+                <li>Visual analysis depends on photo quality and lighting conditions</li>
+                <li>Results should be interpreted by healthcare professionals</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="bg-amber-100/50 dark:bg-amber-900/20 p-3 sm:p-4 rounded-lg border border-amber-300/50">
+            <p className="text-xs sm:text-sm text-amber-900/90 dark:text-amber-100/85 leading-snug">
+              If you have concerns about a child's development, please consult with a healthcare professional or developmental specialist for proper evaluation.
+            </p>
           </div>
         </CardContent>
-      </Card>
 
-      {/* About Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">About This Screening Tool</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6 text-sm sm:text-base">
-          <div className="space-y-2">
-            <h3 className="font-medium">Methodology</h3>
-            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li>Q-CHAT-10 behavioral assessment</li>
-              <li>Visual analysis indicators</li>
-              <li>Aggregate scoring (0–100 scale)</li>
-            </ul>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-medium">Privacy &amp; Security</h3>
-            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li>Secure local processing by default</li>
-              <li>No raw data uploaded without explicit consent</li>
-              <li>Complete data privacy control</li>
-            </ul>
-          </div>
-
-          <p className="text-xs sm:text-sm text-muted-foreground border-t pt-4">
-            This tool is for informational purposes only and not a medical diagnosis.
-          </p>
-        </CardContent>
+        {/* Footer */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 sm:p-6 border-t border-amber-200 bg-amber-100/80 dark:bg-amber-950/60 sticky bottom-0 z-10">
+          <Button
+            variant="outline"
+            onClick={() => setShowDisclaimer(false)}
+            className="flex-1 text-xs sm:text-sm py-2 sm:py-2.5 h-auto"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAcceptDisclaimer}
+            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs sm:text-sm py-2 sm:py-2.5 h-auto"
+          >
+            I Understand, Continue
+          </Button>
+        </div>
       </Card>
     </div>
+  );
+
+  return (
+    <>
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Main Card */}
+        <Card className="text-center sm:text-left">
+          <CardHeader>
+            <CardTitle className="text-lg sm:text-xl md:text-2xl">
+              Autism Spectrum Disorder Early Detection Screening
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Complete our research-based screening tool designed for <span className="font-semibold">early detection in children</span>. 
+              This screening combines behavioral and visual analysis to provide insights about potential ASD traits. 
+              Results include an aggregate score and detailed breakdown of contributing factors.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
+              <Button onClick={handleStartScreening}>Start screening</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* About Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg sm:text-xl">About This Screening Tool</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 text-sm sm:text-base">
+            <div className="space-y-2">
+              <h3 className="font-medium">Purpose</h3>
+              <p className="text-muted-foreground">
+                This tool provides <span className="font-semibold">early detection screening for children</span> with potential autism spectrum traits. 
+                It combines two complementary assessment methods:
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-medium">Methodology</h3>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li><span className="font-semibold">Q-CHAT-10 Behavioral Assessment:</span> Parent/guardian questionnaire assessing developmental milestones and behavioral patterns</li>
+                <li><span className="font-semibold">Visual Analysis:</span> AI-based analysis of facial and behavioral visual cues (model trained on children's images)</li>
+                <li><span className="font-semibold">Aggregate Scoring:</span> Combined assessment (0–100 scale) indicating risk level</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-medium">Privacy &amp; Security</h3>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li>Secure local processing by default</li>
+                <li>No raw data uploaded without explicit consent</li>
+                <li>Complete data privacy control</li>
+                <li>Photos are processed for analysis only and not stored permanently</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-medium">Limitations</h3>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li>Not suitable for adults or individuals outside the child age range</li>
+                <li>Requires accurate parental reporting for behavioral assessment</li>
+                <li>Visual analysis depends on photo quality and lighting conditions</li>
+                <li>Results should be interpreted by healthcare professionals</li>
+              </ul>
+            </div>
+
+            <p className="text-xs sm:text-sm text-muted-foreground border-t pt-4">
+              This tool is for informational and research purposes only. Always consult with qualified healthcare professionals for medical advice and diagnosis.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Portal for Modal - renders outside page container */}
+      {showDisclaimer && typeof document !== 'undefined' && createPortal(disclaimerContent, document.body)}
+    </>
   );
 }

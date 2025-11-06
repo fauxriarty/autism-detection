@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
-import { Camera, RotateCcw, Upload, AlertCircle } from "lucide-react";
+import { Camera, RotateCcw, Upload, AlertCircle, Check, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Props = { onReady: (features: Record<string, number>, blob?: Blob) => void };
 
 export default function ImageCapture({ onReady }: Props) {
-  type Status = "idle" | "live" | "captured" | "error";
+  type Status = "idle" | "live" | "crop" | "confirmed" | "error";
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [flash, setFlash] = useState(false);
@@ -18,6 +19,12 @@ export default function ImageCapture({ onReady }: Props) {
   const [preview, setPreview] = useState<string | null>(null);
   const [lastBlob, setLastBlob] = useState<Blob | null>(null);
 
+  // Crop state
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+  // Clean up on unmount
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -25,6 +32,7 @@ export default function ImageCapture({ onReady }: Props) {
     };
   }, [preview]);
 
+  // ---- Start camera
   async function startCamera() {
     try {
       setError(null);
@@ -45,6 +53,7 @@ export default function ImageCapture({ onReady }: Props) {
     }
   }
 
+  // ---- Capture from camera
   function capture() {
     if (!videoRef.current || !canvasRef.current) return;
     const vw = videoRef.current.videoWidth;
@@ -67,20 +76,68 @@ export default function ImageCapture({ onReady }: Props) {
         setLastBlob(blob);
         const u = URL.createObjectURL(blob);
         setPreview(u);
-        const features = {
-          image_width: cw,
-          image_height: ch,
-          image_size_kb: Math.max(1, Math.round(blob.size / 1024)),
-        };
-        onReady(features, blob);
         streamRef.current?.getTracks().forEach((t) => t.stop());
-        setStatus("captured");
+        setStatus("crop");
       },
       "image/jpeg",
       0.92
     );
   }
 
+  // ---- Upload from file
+  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const u = URL.createObjectURL(file);
+    setPreview(u);
+    setLastBlob(file);
+    setStatus("crop");
+  }
+
+  // ---- Convert cropped area to blob
+  async function getCroppedImg(imageSrc: string, cropPixels: any): Promise<Blob | null> {
+    const img = new Image();
+    img.src = imageSrc;
+    await new Promise((r) => (img.onload = r));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = cropPixels.width;
+    canvas.height = cropPixels.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(
+      img,
+      cropPixels.x,
+      cropPixels.y,
+      cropPixels.width,
+      cropPixels.height,
+      0,
+      0,
+      cropPixels.width,
+      cropPixels.height
+    );
+
+    return new Promise((resolve) =>
+      canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92)
+    );
+  }
+
+  // ---- Confirm crop
+  async function confirmCrop() {
+    if (!preview || !croppedAreaPixels) return;
+    const blob = await getCroppedImg(preview, croppedAreaPixels);
+    if (!blob) return;
+
+    const features = {
+      image_width: croppedAreaPixels.width,
+      image_height: croppedAreaPixels.height,
+      image_size_kb: Math.max(1, Math.round(blob.size / 1024)),
+    };
+    onReady(features, blob);
+    setLastBlob(blob);
+    setStatus("confirmed");
+  }
+
+  // ---- Retry
   function retry(full = true) {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     if (preview) URL.revokeObjectURL(preview);
@@ -90,34 +147,25 @@ export default function ImageCapture({ onReady }: Props) {
     setError(null);
   }
 
-  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const u = URL.createObjectURL(file);
-    setPreview(u);
-    setLastBlob(file);
-    const features = {
-      image_width: 640,
-      image_height: 480,
-      image_size_kb: Math.max(1, Math.round(file.size / 1024)),
-    };
-    onReady(features, file);
-    setStatus("captured");
-  }
+  const hasImage = (status === "crop" || status === "confirmed") && !!preview;
 
-  const hasImage = status === "captured" && !!preview;
-
+  // ---- Render
   return (
     <div className="space-y-6">
       <div className="text-sm text-muted-foreground text-center px-2 sm:px-0">
         {status === "live"
           ? "Align your face and tap Capture"
+          : status === "crop"
+          ? "Adjust crop directly on the image and confirm"
+          : status === "confirmed"
+          ? "Image confirmed successfully"
           : "Take or upload one clear photo. Keep your face centered and well-lit."}
       </div>
 
+      {/* Video or Crop Preview */}
       <div className="relative aspect-[3/4] sm:aspect-video w-full rounded-xl overflow-hidden border border-muted bg-black">
         <AnimatePresence initial={false} mode="wait">
-          {!hasImage ? (
+          {status === "live" ? (
             <motion.video
               key="video"
               ref={videoRef}
@@ -129,28 +177,63 @@ export default function ImageCapture({ onReady }: Props) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             />
-          ) : (
+          ) : status === "crop" && preview ? (
+            <motion.div
+              key="crop"
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <Cropper
+                image={preview}
+                crop={crop}
+                zoom={zoom}
+                aspect={3 / 4}
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_, croppedPixels) =>
+                  setCroppedAreaPixels(croppedPixels)
+                }
+                cropShape="rect"
+                style={{
+                  containerStyle: {
+                    width: "100%",
+                    height: "100%",
+                    position: "absolute",
+                  },
+                  mediaStyle: { objectFit: "contain" },
+                }}
+              />
+            </motion.div>
+          ) : hasImage && preview ? (
             <motion.img
               key="preview"
               src={preview!}
               alt="Captured"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain bg-black"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             />
-          )}
+          ) : null}
         </AnimatePresence>
 
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="h-[75%] w-[75%] sm:h-[65%] sm:w-[65%] rounded-xl border-2 border-blue-400/70 shadow-[0_0_20px_rgba(59,130,246,0.3)]" />
-        </div>
+        {status === "live" && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="h-[75%] w-[75%] sm:h-[65%] sm:w-[65%] rounded-xl border-2 border-blue-400/70 shadow-[0_0_20px_rgba(59,130,246,0.3)]" />
+          </div>
+        )}
 
-        {flash && <div className="absolute inset-0 bg-white/80 animate-pulse pointer-events-none" />}
+        {flash && (
+          <div className="absolute inset-0 bg-white/80 animate-pulse pointer-events-none" />
+        )}
       </div>
 
       <canvas ref={canvasRef} className="hidden" />
 
+      {/* Buttons */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         {status === "idle" && (
           <>
@@ -158,7 +241,13 @@ export default function ImageCapture({ onReady }: Props) {
               <Camera className="mr-2 h-4 w-4" /> Start Camera
             </Button>
             <div>
-              <input id="upload" type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+              <input
+                id="upload"
+                type="file"
+                accept="image/*"
+                onChange={handleUpload}
+                className="hidden"
+              />
               <Button
                 variant="outline"
                 className="w-full sm:w-auto h-11 px-6"
@@ -171,13 +260,38 @@ export default function ImageCapture({ onReady }: Props) {
         )}
 
         {status === "live" && (
-          <Button onClick={capture} className="w-full sm:w-auto h-11 px-8 bg-green-600 hover:bg-green-700 text-white">
+          <Button
+            onClick={capture}
+            className="w-full sm:w-auto h-11 px-8 bg-green-600 hover:bg-green-700 text-white"
+          >
             Capture
           </Button>
         )}
 
-        {status === "captured" && (
-          <Button variant="outline" onClick={() => retry(true)} className="w-full sm:w-auto h-11 px-6">
+        {status === "crop" && (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => retry(true)}
+              className="w-full sm:w-auto h-11 px-6"
+            >
+              <X className="mr-2 h-4 w-4" /> Cancel
+            </Button>
+            <Button
+              onClick={confirmCrop}
+              className="w-full sm:w-auto h-11 px-8 bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Check className="mr-2 h-4 w-4" /> Confirm
+            </Button>
+          </>
+        )}
+
+        {status === "confirmed" && (
+          <Button
+            variant="outline"
+            onClick={() => retry(true)}
+            className="w-full sm:w-auto h-11 px-6"
+          >
             <RotateCcw className="mr-2 h-4 w-4" /> Retake
           </Button>
         )}

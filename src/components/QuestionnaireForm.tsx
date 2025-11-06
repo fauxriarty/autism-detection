@@ -33,9 +33,9 @@ const QTXT: Readonly<Record<AKey, string>> = {
   A3:"Does your child point to indicate that they want something?",
   A4:"Does your child point to share interest with you?",
   A5:"Does your child pretend (e.g., care for dolls, talk on a toy phone)?",
-  A6:"Does your child follow where you’re looking?",
+  A6:"Does your child follow where you're looking?",
   A7:"If someone is upset, does your child try to comfort them?",
-  A8:"Would you describe your child’s first words as typical?",
+  A8:"Would you describe your child's first words as typical?",
   A9:"Does your child use simple gestures (e.g., wave goodbye)?",
   A10:"Does your child stare at nothing with no apparent purpose?",
 };
@@ -48,8 +48,6 @@ export default function QuestionnaireForm({
 }: {
   onReady: (features: Record<string, number | string>) => void;
 }) {
-  const [preset, setPreset] = useState<"low" | "high" | null>("high");
-
   // Preload Q-CHAT model once when this component first mounts
   useEffect(() => {
     let mounted = true;
@@ -70,30 +68,10 @@ export default function QuestionnaireForm({
   };
 
   const resolver = zodResolver(Schema) as Resolver<FormData>;
-  const { register, handleSubmit, setValue } = useForm<FormData>({
+  const { register, handleSubmit } = useForm<FormData>({
     resolver,
     defaultValues: defaults,
   });
-
-  // Preset examples
-  function applyExample(which: "low" | "high") {
-    if (which === "low") {
-      setValue("Age_Mons", 24);
-      for (let i = 0; i < 9; i++) setValue(A_KEYS[i], "0");
-      setValue("A10", "0");
-      setValue("Sex", "F");
-      setValue("Family_mem_with_ASD", "0");
-      setPreset("low");
-      return;
-    }
-    // high-risk
-    setValue("Age_Mons", 36);
-    for (let i = 0; i < 9; i++) setValue(A_KEYS[i], "1");
-    setValue("A10", "1");
-    setValue("Sex", "M");
-    setValue("Family_mem_with_ASD", "1");
-    setPreset("high");
-  }
 
   // Submit handler
   function onSubmit(data: FormData) {
@@ -111,7 +89,7 @@ export default function QuestionnaireForm({
   // ------------------------------------------------------------------
   return (
     <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-      {/* Age and presets */}
+      {/* Age */}
       <div className="rounded-xl border p-4">
         <div className="mb-4">
           <Label htmlFor="age" className="block mb-1">
@@ -125,27 +103,6 @@ export default function QuestionnaireForm({
             className="max-w-[220px]"
             {...register("Age_Mons", { valueAsNumber: true })}
           />
-        </div>
-
-        <div className="flex flex-wrap gap-2 mt-3">
-          <Button
-            type="button"
-            aria-pressed={preset === "low"}
-            variant={preset === "low" ? "default" : "outline"}
-            onClick={() => applyExample("low")}
-            size="sm"
-          >
-            Example: low-risk
-          </Button>
-          <Button
-            type="button"
-            aria-pressed={preset === "high"}
-            variant={preset === "high" ? "default" : "outline"}
-            onClick={() => applyExample("high")}
-            size="sm"
-          >
-            Example: high-risk
-          </Button>
         </div>
       </div>
 
