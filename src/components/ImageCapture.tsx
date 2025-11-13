@@ -88,7 +88,6 @@ export default function ImageCapture({ onReady }: Props) {
     setStatus("idle");
     setError(null);
   }
-// check
 
   const hasImage = (status === "crop" || status === "confirmed") && !!preview;
 
