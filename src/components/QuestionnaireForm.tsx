@@ -8,9 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { loadQChat } from "@/lib/qchat";
 
-// ------------------------------------------------------------------
 // Keys and Schema
-// ------------------------------------------------------------------
 const A_KEYS = [
   "A1","A2","A3","A4","A5","A6","A7","A8","A9","A10",
 ] as const;
@@ -60,17 +58,21 @@ export default function QuestionnaireForm({
   }, []);
 
   // Default form values
-  const defaults: FormData = {
-    Age_Mons: 36,
-    A1:"0",A2:"1",A3:"1",A4:"1",A5:"1",A6:"1",A7:"1",A8:"1",A9:"1",A10:"1",
-    Sex:"M",
-    Family_mem_with_ASD:"1",
+  const defaults: Partial<FormData> = {
+    Age_Mons: undefined,
+    A1: undefined, A2: undefined, A3: undefined,
+    A4: undefined, A5: undefined, A6: undefined,
+    A7: undefined, A8: undefined, A9: undefined,
+    A10: undefined,
+    Sex: undefined,
+    Family_mem_with_ASD: undefined,
   };
 
   const resolver = zodResolver(Schema) as Resolver<FormData>;
-  const { register, handleSubmit } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver,
     defaultValues: defaults,
+    mode: "onSubmit",
   });
 
   // Submit handler
@@ -84,9 +86,7 @@ export default function QuestionnaireForm({
     onReady(feat);
   }
 
-  // ------------------------------------------------------------------
   // Render
-  // ------------------------------------------------------------------
   return (
     <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
       {/* Age */}
@@ -100,16 +100,20 @@ export default function QuestionnaireForm({
             type="number"
             min={0}
             max={120}
-            className="max-w-[220px]"
+            className={`max-w-[220px] ${errors.Age_Mons ? "border-red-500" : ""}`}
             {...register("Age_Mons", { valueAsNumber: true })}
           />
+          {errors.Age_Mons && <p className="text-xs text-red-500 mt-1">{errors.Age_Mons.message}</p>}
         </div>
       </div>
 
       {/* Sex + Family */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-xl border p-4">
-          <div className="mb-2 font-medium">Sex</div>
+        <div className={`rounded-xl border p-4 ${errors.Sex ? "border-red-500" : ""}`}>
+          <div className="mb-2 font-medium flex items-center gap-1">
+            Sex
+            {errors.Sex && <span className="text-red-500 text-sm">*</span>}
+          </div>
           <div className="flex gap-6">
             <label className="inline-flex items-center gap-2">
               <input type="radio" value="M" className="form-radio" {...register("Sex")} />
@@ -121,8 +125,11 @@ export default function QuestionnaireForm({
             </label>
           </div>
         </div>
-        <div className="rounded-xl border p-4">
-          <div className="mb-2 font-medium">Family member with ASD?</div>
+        <div className={`rounded-xl border p-4 ${errors.Family_mem_with_ASD ? "border-red-500" : ""}`}>
+          <div className="mb-2 font-medium flex items-center gap-1">
+            Family member with ASD?
+            {errors.Family_mem_with_ASD && <span className="text-red-500 text-sm">*</span>}
+          </div>
           <div className="flex gap-6">
             <label className="inline-flex items-center gap-2">
               <input type="radio" value="1" className="form-radio" {...register("Family_mem_with_ASD")} />
@@ -142,10 +149,12 @@ export default function QuestionnaireForm({
           const yesIsOne = key === "A10";
           const yesVal = yesIsOne ? "1" : "0";
           const noVal = yesIsOne ? "0" : "1";
+          const hasError = !!(errors as Record<string, any>)[key];
           return (
-            <div key={key} className="rounded-xl border p-4">
-              <div className="mb-2 font-medium">
+            <div key={key} className={`rounded-xl border p-4 ${hasError ? "border-red-500" : ""}`}>
+              <div className="mb-2 font-medium flex items-center gap-1">
                 Q{idx + 1}. {QTXT[key]}
+                {hasError && <span className="text-red-500 text-sm">*</span>}
               </div>
               <div className="flex gap-6">
                 <label className="inline-flex items-center gap-2">

@@ -34,7 +34,7 @@ export default function Navbar() {
 		<>
 			<header className="sticky top-0 z-40 w-full border-b border-white/20 backdrop-blur-sm supports-[backdrop-filter]:bg-black/30">
 				<div className="mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-					{/* Brand */}
+					{/* brand */}
 					<Link
 						href="/"
 						className="font-semibold text-lg sm:text-xl text-white hover:opacity-80 transition-opacity"
@@ -43,7 +43,7 @@ export default function Navbar() {
 						ASD Screener
 					</Link>
 
-					{/* Desktop Nav */}
+					{/* desktop nav */}
 					<nav className="hidden md:flex items-center gap-4" role="navigation">
 						{navItems.map((item) => {
 							if ("isAction" in item && item.isAction) {
@@ -79,7 +79,7 @@ export default function Navbar() {
 						})}
 					</nav>
 
-					{/* Mobile Menu Button */}
+					{/* mobile menu button */}
 					<button
 						onClick={() => setMenuOpen(!menuOpen)}
 						className="md:hidden text-white hover:opacity-80 transition-opacity focus:outline-none"
@@ -89,7 +89,7 @@ export default function Navbar() {
 					</button>
 				</div>
 
-				{/* Mobile Menu Dropdown */}
+				{/* mobile menu dropdown */}
 				{menuOpen && (
 					<div className="md:hidden bg-black/90 border-t border-white/10 backdrop-blur-sm">
 						<nav className="flex flex-col items-center py-3 space-y-2" role="navigation">
@@ -132,11 +132,11 @@ export default function Navbar() {
 				)}
 			</header>
 
-			{/* Disclaimer Modal */}
+			{/* disclaimer modal */}
 			{showDisclaimer && (
 				<div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
 					<Card className="w-full sm:max-w-2xl border-amber-500/70 bg-amber-50/95 dark:bg-amber-950/30 max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col rounded-b-none sm:rounded-lg">
-						{/* Header */}
+						{/* header */}
 						<div className="flex items-center justify-between bg-amber-50/95 dark:bg-amber-950/30 border-b border-amber-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-10">
 							<div className="flex items-center gap-2 min-w-0 flex-1">
 								<AlertCircle className="h-5 w-6 sm:h-6 sm:w-6 text-amber-600 flex-shrink-0" />
@@ -153,7 +153,7 @@ export default function Navbar() {
 							</button>
 						</div>
 
-						{/* Content */}
+						{/* content */}
 						<CardContent className="space-y-3 sm:space-y-4 text-xs sm:text-sm md:text-base pt-4 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto flex-1 px-4 sm:px-6">
 							<div className="bg-amber-100/50 dark:bg-amber-900/20 p-3 sm:p-4 rounded-lg border border-amber-300/50">
 								<p className="text-amber-900/95 dark:text-amber-100/90 font-semibold leading-snug">
@@ -198,7 +198,7 @@ export default function Navbar() {
 							</div>
 						</CardContent>
 
-						{/* Footer */}
+						{/* footer */}
 						<div className="flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 sm:p-6 border-t border-amber-200 bg-amber-100/80 dark:bg-amber-950/60 sticky bottom-0 z-10">
 							<Button
 								variant="outline"

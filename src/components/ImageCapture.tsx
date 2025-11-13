@@ -19,12 +19,12 @@ export default function ImageCapture({ onReady }: Props) {
   const [preview, setPreview] = useState<string | null>(null);
   const [lastBlob, setLastBlob] = useState<Blob | null>(null);
 
-  // Crop state
+  // Cropper states
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-  // Clean up on unmount
+  // cleanup
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -32,28 +32,37 @@ export default function ImageCapture({ onReady }: Props) {
     };
   }, [preview]);
 
-  // ---- Start camera
   async function startCamera() {
     try {
       setError(null);
       retry(true);
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: { ideal: "user" },
+        },
         audio: false,
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
+        videoRef.current.muted = true;
+        videoRef.current.playsInline = true;
+        videoRef.current.onloadedmetadata = () => videoRef.current?.play();
       }
       setStatus("live");
     } catch (e) {
+      let msg = "Unable to access camera.";
+      if (e instanceof DOMException) {
+        if (e.name === "NotAllowedError") msg = "Camera access denied. Please allow permissions.";
+        else if (e.name === "NotFoundError") msg = "No camera found.";
+      }
+      setError(msg);
       setStatus("error");
-      setError(e instanceof Error ? e.message : "Camera access failed.");
     }
   }
 
-  // ---- Capture from camera
   function capture() {
     if (!videoRef.current || !canvasRef.current) return;
     const vw = videoRef.current.videoWidth;
@@ -68,15 +77,15 @@ export default function ImageCapture({ onReady }: Props) {
     ctx.drawImage(videoRef.current, 0, 0, cw, ch);
 
     setFlash(true);
-    setTimeout(() => setFlash(false), 150);
+    setTimeout(() => setFlash(false), 120);
 
     canvasRef.current.toBlob(
       (blob) => {
         if (!blob) return;
-        setLastBlob(blob);
+        streamRef.current?.getTracks().forEach((t) => t.stop());
         const u = URL.createObjectURL(blob);
         setPreview(u);
-        streamRef.current?.getTracks().forEach((t) => t.stop());
+        setLastBlob(blob);
         setStatus("crop");
       },
       "image/jpeg",
@@ -84,7 +93,6 @@ export default function ImageCapture({ onReady }: Props) {
     );
   }
 
-  // ---- Upload from file
   function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -94,7 +102,6 @@ export default function ImageCapture({ onReady }: Props) {
     setStatus("crop");
   }
 
-  // ---- Convert cropped area to blob
   async function getCroppedImg(imageSrc: string, cropPixels: any): Promise<Blob | null> {
     const img = new Image();
     img.src = imageSrc;
@@ -121,25 +128,28 @@ export default function ImageCapture({ onReady }: Props) {
     );
   }
 
-  // ---- Confirm crop
   async function confirmCrop() {
     if (!preview || !croppedAreaPixels) return;
     const blob = await getCroppedImg(preview, croppedAreaPixels);
     if (!blob) return;
+
+    const croppedURL = URL.createObjectURL(blob);
+    setPreview(croppedURL);
+    setLastBlob(blob);
 
     const features = {
       image_width: croppedAreaPixels.width,
       image_height: croppedAreaPixels.height,
       image_size_kb: Math.max(1, Math.round(blob.size / 1024)),
     };
+
     onReady(features, blob);
-    setLastBlob(blob);
     setStatus("confirmed");
   }
 
-  // ---- Retry
   function retry(full = true) {
     streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     if (full) setLastBlob(null);
@@ -149,20 +159,19 @@ export default function ImageCapture({ onReady }: Props) {
 
   const hasImage = (status === "crop" || status === "confirmed") && !!preview;
 
-  // ---- Render
   return (
     <div className="space-y-6">
-      <div className="text-sm text-muted-foreground text-center px-2 sm:px-0">
+      <div className="text-sm text-muted-foreground text-center px-2">
         {status === "live"
           ? "Align your face and tap Capture"
           : status === "crop"
-          ? "Adjust crop directly on the image and confirm"
+          ? "Adjust the crop area directly on the image and confirm"
           : status === "confirmed"
           ? "Image confirmed successfully"
           : "Take or upload one clear photo. Keep your face centered and well-lit."}
       </div>
 
-      {/* Video or Crop Preview */}
+      {/* Main Capture Container */}
       <div className="relative aspect-[3/4] sm:aspect-video w-full rounded-xl overflow-hidden border border-muted bg-black">
         <AnimatePresence initial={false} mode="wait">
           {status === "live" ? (
@@ -172,6 +181,7 @@ export default function ImageCapture({ onReady }: Props) {
               autoPlay
               muted
               playsInline
+              controls={false}
               className="h-full w-full object-cover"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -198,11 +208,7 @@ export default function ImageCapture({ onReady }: Props) {
                 }
                 cropShape="rect"
                 style={{
-                  containerStyle: {
-                    width: "100%",
-                    height: "100%",
-                    position: "absolute",
-                  },
+                  containerStyle: { width: "100%", height: "100%" },
                   mediaStyle: { objectFit: "contain" },
                 }}
               />
@@ -233,7 +239,7 @@ export default function ImageCapture({ onReady }: Props) {
 
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Buttons */}
+      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         {status === "idle" && (
           <>
